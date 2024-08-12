@@ -1,0 +1,52 @@
+body{
+    background-color: rgb(13, 48, 51);
+    font-family: 'Roboto', sans-serif;
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+#txtEnt{
+    color:white;
+    width: 20em;
+}
+
+#txtSal{
+    color:white;
+    width: 20em;
+}
+
+#entrada{
+      background-color: transparent;
+      color: #fff;
+
+}
+
+#salida{
+    background-color: black;
+    color: green;
+}
+
+#sectEnt{
+  position: relative;
+  margin-left: 15em;
+  margin-top: 5em;
+}
+
+#sectSal{
+  position: relative;
+  margin-left: 15em;
+}
+
+#btnEjecutar{
+  background-color: rgb(65, 65, 211);
+  border-radius: 5px;
+  height: 2em;
+  width:10em;
+  color:white;
+  font-size: 1em;
+}
+
+#arch{
+  margin-right: 1em;
+}
