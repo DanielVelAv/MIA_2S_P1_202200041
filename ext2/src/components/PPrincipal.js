@@ -1,3 +1,4 @@
+import axios from 'axios';
 import React,{useState} from 'react'
 
 
@@ -23,16 +24,31 @@ export const PPrincipal = () => {
     setFileContent(e.target.value);
   };
 
+  const handleSubmit = (e) => {
+  
+    e.preventDefault();
+    axios.post('http://localhost:8080/api/process', { text: fileContent })
+      .then(response => {
+        console.log(response.data);
+      })
+
+      .catch(error => {
+        console.error("Ocurrio un error",error);
+      });
+
+  };
+
+
   return (
     <div>
-        <section id="sectEnt">
+        <form id="sectEnt" onSubmit={handleSubmit}>
           <h1 id="txtEnt">Entrada:</h1>
           <textarea name="entrada" id="entrada" cols="100" rows="10" value={fileContent} onChange={handleTextArea}></textarea> <br></br><br></br><br></br>
           <input type="file" id="arch" />
           <button id="btnEjecutar" onClick={handleUpload}>Subir texto</button>
-          <button id="btnEjecutarCom"> Ejecutar </button>
+          <button id="btnEjecutarCom" type='submit'> Ejecutar </button>
 
-        </section>
+        </form>
 
         <section id="sectSal">
         <h1 id="txtSal">Salida:</h1>
