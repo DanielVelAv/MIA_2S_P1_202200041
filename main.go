@@ -1,6 +1,7 @@
 package main
 
 import (
+	analyzer "MIA_2S_P1_202200041/analyzer"
 	"fmt"
 	"net/http"
 
@@ -31,6 +32,7 @@ func main() {
 		}
 
 		processedText := processText(data.Text)
+		analyzer.Analyzer(data.Text)
 		c.JSON(http.StatusOK, gin.H{"text": processedText})
 
 	})
@@ -40,5 +42,6 @@ func main() {
 
 func processText(text string) string {
 	fmt.Println("Texto Obtenido: " + text)
+	analyzer.Analyzer(text)
 	return "Texto Obtenido: " + text
 }

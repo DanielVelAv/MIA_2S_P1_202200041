@@ -1,4 +1,4 @@
-module myproject
+module MIA_2S_P1_202200041
 
 go 1.22.5
 
