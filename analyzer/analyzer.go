@@ -12,15 +12,21 @@ func Analyzer(input string) (interface{}, error) {
 	indTokens := strings.Fields(input)
 
 	if len(indTokens) == 0 {
-		return nil, errors.New("no command found")
+		return "", errors.New("no command found")
 	}
-	fmt.Println(indTokens, input)
-	fmt.Println(indTokens[0])
+
 	switch indTokens[0] {
 	case "mkdisk":
 		fmt.Println(indTokens[1:])
 		return comandos.ParserMkDisk(indTokens[1:])
 
+	case "rmdisk":
+		fmt.Println(indTokens[1:])
+		return comandos.ParserRMDISK(indTokens[1:])
+
+	case "fdisk":
+		fmt.Println(indTokens[1:])
+		return comandos.ParserFDISK(indTokens[1:])
 	default:
 		return nil, fmt.Errorf("command not found: %s", indTokens[0])
 	}

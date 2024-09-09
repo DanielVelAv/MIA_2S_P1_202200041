@@ -148,7 +148,6 @@ func crearDisco(com *MKDISK, sizeB int) error {
 	}
 	defer file.Close()
 
-	// Escribir en el archivo usando un buffer de 1 MB
 	buffer := make([]byte, 1024*1024) // Crea un buffer de 1 MB
 	for sizeB > 0 {
 		writeSize := len(buffer)
