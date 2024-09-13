@@ -77,3 +77,26 @@ func (mbr *MBR) GetFirstA() (*PARTITION, int, int) {
 	}
 	return nil, -1, -1
 }
+func (mbr *MBR) printPartitions() {
+	fmt.Println("Particiones:")
+	for i, part := range mbr.Mbr_partitions {
+		partStatus := rune(part.Part_status[0])
+		partType := rune(part.Part_type[0])
+		partFit := rune(part.Part_fit[0])
+
+		partName := string(part.Part_name[:])
+		partID := part.Part_id
+
+		fmt.Printf("Particion %d:\n", i+1)
+		fmt.Printf("  Status: %c\n", partStatus)
+		fmt.Printf("  Type: %c\n", partType)
+		fmt.Printf("  Fit: %c\n", partFit)
+		fmt.Printf("  Start: %d\n", part.Part_start)
+		fmt.Printf("  Size: %d\n", part.Part_size)
+		fmt.Printf("  Name: %s\n", partName)
+		fmt.Printf("  Correlative: %d\n", part.Part_correlative)
+		fmt.Printf("  ID: %d\n", partID)
+
+	}
+
+}

@@ -4,6 +4,7 @@ import (
 	analyzer "MIA_2S_P1_202200041/analyzer"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -32,7 +33,7 @@ func main() {
 		}
 
 		processedText := processText(data.Text)
-		analyzer.Analyzer(data.Text)
+		//analyzer.Analyzer(data.Text)
 		c.JSON(http.StatusOK, gin.H{"text": processedText})
 
 	})
@@ -41,7 +42,23 @@ func main() {
 }
 
 func processText(text string) string {
-	fmt.Println("Texto Obtenido: " + text)
-	analyzer.Analyzer(text)
+	lineas := strings.Split(text, "\n")
+	var contenido []string
+
+	for _, line := range lineas {
+		if line == "" {
+			continue
+		}
+		result, err := analyzer.Analyzer(line)
+
+		if err != nil {
+			contenido = append(contenido, fmt.Sprintf("Error: %v", err))
+		} else {
+			contenido = append(contenido, fmt.Sprintf("Result: %v", result))
+		}
+
+	}
+
+	//analyzer.Analyzer(text)
 	return "Texto Obtenido: " + text
 }

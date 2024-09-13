@@ -127,7 +127,7 @@ func comandosFdisk(fdisk *FDISK) error {
 			return err
 		}
 	} else if fdisk.tipos == "L" {
-		//err := crearParticionLogica(fdisk, tamanio)
+		err := crearParticionLogica(fdisk, tamanio)
 		if err != nil {
 			fmt.Println("Error al crear la particion logica:", err)
 			return err
@@ -175,22 +175,45 @@ func crearParticionExtendida(fdisk *FDISK, tamanio int) error {
 		return err
 	}
 
+	for _, part := range com.Mbr_partitions {
+		if part.Part_type[0] == 'E' {
+			return errors.New("Ya existe una particion extendida")
+		}
+	}
+
 	//busca la primera particion disponible
 	particionDisponible, inicioParticion, indiceParticion := com.GetFirstA()
 
 	if particionDisponible == nil {
-		fmt.Println("No hay espacio suficiente para crear la particion")
+		return errors.New("No hay espacio suficiente para crear la particion")
 	}
+
 	particionDisponible.CrearParticionE(inicioParticion, tamanio, fdisk.tipos, fdisk.fit, fdisk.name)
 
 	if particionDisponible != nil {
 		com.Mbr_partitions[indiceParticion] = *particionDisponible
 	}
-	err = crearEBR(fdisk, inicioParticion, tamanio, fdisk.name)
+	fmt.Println("Particion extendida creada: ")
+	err = crearEBRNil(fdisk, inicioParticion, tamanio, fdisk.name)
 	if err != nil {
 		fmt.Println("Error al crear el EBR:", err)
 		return err
 	}
+
+	particionDisponible.PrintPart(fdisk.path)
+
+	ebr := &structures.EBR{
+		Ebr_part_start: int32(inicioParticion),
+		Ebr_part_size:  0,
+		Ebr_part_next:  -1,
+	}
+	err = ebr.DeserializeEBR(fdisk.path, inicioParticion)
+	if err != nil {
+		fmt.Println("Error al deserializar el EBR bulo:", err)
+		return err
+	}
+	fmt.Printf("EBR encontrado: %+v\n", ebr)
+
 	//se serializa el mbr
 	err = com.SerializarMBR(fdisk.path)
 	if err != nil {
@@ -200,13 +223,101 @@ func crearParticionExtendida(fdisk *FDISK, tamanio int) error {
 	return nil
 }
 
-//func crearParticionLogica{
+func crearParticionLogica(fdisk *FDISK, tamanio int) error {
+	fmt.Println("Ingresa a crear particion logica")
+	mbr, err := obtenerMBR(fdisk.path)
+	if err != nil {
+		return err
+	}
 
-//}
+	extendida, err := ExisteExtendida(mbr) //existe extendida puede ser una verificacion solamente
+	if err != nil {
+		fmt.Println("No se encontro la particion extendida:", err)
+		return err
+	}
+	fmt.Println("Particion extendida encontrada: ", extendida)
 
-func crearEBR(com *FDISK, pStart int, pSize int, pName string) error {
+	// Verificar el espacio disponible en la partición extendida
+	// saco el MBR, verifico el espacio de la extendida usando el ultimo EBR insertado y
+	//espacio a insertar de la particion logica
+	espacioDisponible, err := EspacioDisponibleExtendida(fdisk, extendida, tamanio)
+	if err != nil {
+		fmt.Println("Valio v*rga buscando espacio")
+	}
+	fmt.Println("Espacio disponible en la partición extendida:", espacioDisponible, "tamaño a querer insertar: ", tamanio)
+	if espacioDisponible < tamanio {
+		return errors.New("No hay suficiente espacio disponible en la partición extendida")
+	}
+	fmt.Println("Espacio suficiente en la partición extendida")
+
+	ebr := &structures.EBR{}
+	err = ebr.DeserializeEBR(fdisk.path, int(extendida.Part_start))
+
+	if err != nil {
+		fmt.Println("Error al deserializar el EBR:", err)
+		return err
+	}
+
+	contadorParticionesLogicas := 0
+
+	//busca el ebr nulo anterior
+	for {
+		contadorParticionesLogicas++
+		if ebr.Ebr_part_next == 0 {
+			break
+		}
+		siguienteEbr := &structures.EBR{}
+		err := siguienteEbr.DeserializeEBR(fdisk.path, int(ebr.Ebr_part_next))
+		if err != nil {
+			return err
+		}
+		ebr = siguienteEbr
+	}
+
+	// Verificar si se excede el límite de 4 particiones lógicas
+	if contadorParticionesLogicas >= 4 {
+		return errors.New("La partición extendida ya contiene el máximo de 4 particiones lógicas")
+	}
+
+	fmt.Printf("numero de particiones logicas: %d\n", contadorParticionesLogicas)
+
+	iniciologica := int(ebr.Ebr_part_start) + int(ebr.Ebr_part_size)
+
+	fmt.Println("Inicio logico de la particion logica: ", iniciologica)
+
+	nuevaEBR := &structures.EBR{
+		Ebr_part_moun:  [1]byte{'0'},
+		Ebr_part_fit:   [1]byte{fdisk.fit[0]},
+		Ebr_part_start: int32(iniciologica),
+		Ebr_part_size:  int32(tamanio),
+		Ebr_part_next:  0,
+		Ebr_part_name:  [16]byte{},
+	}
+	copy(nuevaEBR.Ebr_part_name[:], fdisk.name)
+	ebr.Ebr_part_next = int32(iniciologica)
+
+	err = ebr.SerializarEBR(fdisk.path, int(ebr.Ebr_part_start))
+	if err != nil {
+		fmt.Println("Error al actualizar el EBR anterior:", err)
+		return err
+	}
+
+	err = nuevaEBR.SerializarEBR(fdisk.path, iniciologica)
+
+	if err != nil {
+		fmt.Println("Error al crear el nuevo EBR:", err)
+		return err
+	}
+
+	fmt.Println("Particion logica creada: ")
+	nuevaEBR.PrintPart(fdisk.path)
+	return nil
+
+}
+
+func crearEBRNil(com *FDISK, pStart int, pSize int, pName string) error {
 	// Seleccionar el tipo de ajuste
-	var fitBy byte
+	/*var fitBy byte
 	switch com.fit {
 	case "FF":
 		fitBy = 'F'
@@ -217,27 +328,77 @@ func crearEBR(com *FDISK, pStart int, pSize int, pName string) error {
 	default:
 		fmt.Println("Invalid fit type")
 		return nil
-	}
-	var pNext int
-	pNext = pStart + pSize
-	actualN := pName + "EBR"
+	}*/
+	//var pNext int
+	//pNext = pStart + pSize
+	//actualN := pName + "EBR"
 
 	// Crear el EBR con los valores proporcionados
 	ebr := &structures.EBR{
 		Ebr_part_moun:  [1]byte{0},
-		Ebr_part_fit:   [1]byte{fitBy},
+		Ebr_part_fit:   [1]byte{'W'},
 		Ebr_part_start: int32(pStart),
-		Ebr_part_size:  int32(pSize),
-		Ebr_part_next:  int32(pNext),
+		Ebr_part_size:  int32(0),
+		Ebr_part_next:  int32(0),
 		Ebr_part_name:  [16]byte{},
 	}
-	copy(ebr.Ebr_part_name[:], actualN)
+	copy(ebr.Ebr_part_name[:], "")
 
 	// Serializar el MBR en el archivo
-	err := ebr.SerializarEBR(com.path)
+	err := ebr.SerializarEBR(com.path, pStart)
 	if err != nil {
 		fmt.Println("Error:", err)
 	}
-
 	return nil
+}
+
+func ExisteExtendida(mbr *structures.MBR) (*structures.PARTITION, error) {
+	for _, part := range mbr.Mbr_partitions {
+		if part.Part_type[0] == 'E' {
+			return &part, nil
+		}
+	}
+	return nil, errors.New("No hay particion extendida")
+}
+
+func EspacioDisponibleExtendida(fdisk *FDISK, extendida *structures.PARTITION, tamanio int) (int, error) {
+
+	ebr := &structures.EBR{}
+	err := ebr.DeserializeEBR(fdisk.path, int(extendida.Part_start))
+	if err != nil {
+		return 0, err
+	}
+	//fmt.Println("Todo bien deserializando", ebr)
+	//inicialmente tiene todo
+	espacioDisponible := int(extendida.Part_size)
+	//fmt.Println("espacio disponible antes de verificar ebrs: ", espacioDisponible)
+
+	//restar lo ocupado por el primer ebr
+	espacioDisponible -= int(ebr.Ebr_part_size)
+	//fmt.Println("espacio disponible despues de verificar el primer ebr: ", espacioDisponible)
+
+	for ebr.Ebr_part_next != 0 {
+		siguienteEBR := &structures.EBR{}
+		err := siguienteEBR.DeserializeEBR(fdisk.path, int(ebr.Ebr_part_next))
+		if err != nil {
+			return 0, err
+		}
+		espacioDisponible -= int(siguienteEBR.Ebr_part_size)
+		ebr = siguienteEBR
+	}
+
+	// Restar el espacio ocupado por el último EBR nulo
+	espacioDisponible -= int(ebr.Ebr_part_size)
+	//fmt.Println("espacio disponible despues de verificar todos los ebrs: ", espacioDisponible)
+	return espacioDisponible, nil
+
+}
+
+func obtenerMBR(path string) (*structures.MBR, error) {
+	var mbr structures.MBR
+	err := mbr.Deserialize(path)
+	if err != nil {
+		return nil, err
+	}
+	return &mbr, nil
 }

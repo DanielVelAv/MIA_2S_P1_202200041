@@ -65,7 +65,7 @@ func ParserRMDISK(tokens []string) (string, error) {
 
 func comandosRmdisk(com *RMDISK) error {
 	fmt.Printf("ingreso a comands rmdisk")
-	err := eliminarDisco(com)
+	err := eliminarDisco(com) //se debe modificar, primero elimina el disco y luego el archivo
 	if err != nil {
 		fmt.Println("Error al eliminar el disco", err)
 		return err
