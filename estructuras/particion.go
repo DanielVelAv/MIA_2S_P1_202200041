@@ -1,6 +1,9 @@
 package estructuras
 
-import "fmt"
+import (
+	"fmt"
+	"strconv"
+)
 
 type PARTITION struct {
 	Part_status      [1]byte
@@ -69,4 +72,18 @@ func (p *PARTITION) PrintPart(ubicacion string) {
 		}
 	}
 
+}
+
+func (particion *PARTITION) MontarParticion(correlativo int, id string) error {
+	// se asigna correlativo a la partición
+	particion.Part_correlative = int32(correlativo) + 1
+
+	//se asigna el id a la particion
+	idInt, err := strconv.Atoi(id)
+	if err != nil {
+		return fmt.Errorf("error convirtiendo: %v", err)
+	}
+	particion.Part_id = int32(idInt)
+
+	return nil
 }

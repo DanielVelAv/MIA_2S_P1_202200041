@@ -3,8 +3,10 @@ package estructuras
 import (
 	"bytes"
 	"encoding/binary"
+	"errors"
 	"fmt"
 	"os"
+	"strings"
 )
 
 type MBR struct {
@@ -99,4 +101,31 @@ func (mbr *MBR) printPartitions() {
 
 	}
 
+}
+
+func (mbr *MBR) GetPName(name string) (*PARTITION, int) {
+	//se recorren la particiones del MBR
+	for i, partition := range mbr.Mbr_partitions {
+		//convertimos part_name a string y obviamos los nulos
+		Pname := strings.Trim(string(partition.Part_name[:]), "\x00")
+		//conve nombre de particion a str, bye bye nulos
+		Iname := strings.Trim(name, "\x00")
+
+		if strings.EqualFold(Pname, Iname) {
+			return &partition, i
+		}
+	}
+	return nil, -1
+}
+
+func (mbr *MBR) GetPID(id string) (*PARTITION, error) {
+	// se recorren las particiones
+	for i := 0; i < len(mbr.Mbr_partitions); i++ {
+		pID := strings.Trim(string(mbr.Mbr_partitions[i].Part_id), "\x00")
+		inputId := strings.Trim(id, "\x00")
+		if strings.EqualFold(pID, inputId) { //si son iguales
+			return &mbr.Mbr_partitions[i], nil
+		}
+	}
+	return nil, errors.New("No se encontró partición con el ID: %s")
 }

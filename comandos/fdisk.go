@@ -149,7 +149,8 @@ func crearParticionPrimaria(fdisk *FDISK, tamanio int) error {
 	particionDisponible, inicioParticion, indiceParticion := com.GetFirstA()
 
 	if particionDisponible == nil {
-		fmt.Println("No hay espacio suficiente para crear la particion")
+		return errors.New("No hay suficiente espacio para crear la particion primaria")
+		//fmt.Println("No hay espacio suficiente para crear la particion")
 	}
 	particionDisponible.CrearParticion(inicioParticion, tamanio, fdisk.tipos, fdisk.fit, fdisk.name)
 
@@ -275,9 +276,9 @@ func crearParticionLogica(fdisk *FDISK, tamanio int) error {
 	}
 
 	// Verificar si se excede el límite de 4 particiones lógicas
-	if contadorParticionesLogicas >= 4 {
+	/*if contadorParticionesLogicas >= 4 {
 		return errors.New("La partición extendida ya contiene el máximo de 4 particiones lógicas")
-	}
+	}*/
 
 	fmt.Printf("numero de particiones logicas: %d\n", contadorParticionesLogicas)
 
@@ -310,28 +311,36 @@ func crearParticionLogica(fdisk *FDISK, tamanio int) error {
 	}
 
 	fmt.Println("Particion logica creada: ")
-	nuevaEBR.PrintPart(fdisk.path)
+	//nuevaEBR.PrintPart(fdisk.path)
+
+	//para imprimir todos los ebrs
+
+	ebr = &structures.EBR{}
+	err = ebr.DeserializeEBR(fdisk.path, int(extendida.Part_start))
+	if err != nil {
+		fmt.Println("Error al deserializar el EBR:", err)
+		return err
+	}
+
+	fmt.Println("Lista de EBRs:")
+	for {
+		ebr.PrintPart(fdisk.path)
+		if ebr.Ebr_part_next == 0 {
+			break
+		}
+		siguienteEbr := &structures.EBR{}
+		err := siguienteEbr.DeserializeEBR(fdisk.path, int(ebr.Ebr_part_next))
+		if err != nil {
+			return err
+		}
+		ebr = siguienteEbr
+	}
+
 	return nil
 
 }
 
 func crearEBRNil(com *FDISK, pStart int, pSize int, pName string) error {
-	// Seleccionar el tipo de ajuste
-	/*var fitBy byte
-	switch com.fit {
-	case "FF":
-		fitBy = 'F'
-	case "BF":
-		fitBy = 'B'
-	case "WF":
-		fitBy = 'W'
-	default:
-		fmt.Println("Invalid fit type")
-		return nil
-	}*/
-	//var pNext int
-	//pNext = pStart + pSize
-	//actualN := pName + "EBR"
 
 	// Crear el EBR con los valores proporcionados
 	ebr := &structures.EBR{

@@ -19,15 +19,18 @@ func Analyzer(input string) (interface{}, error) {
 	case "mkdisk":
 		fmt.Println(indTokens[1:])
 		return comandos.ParserMkDisk(indTokens[1:])
-		return "", nil
 	case "rmdisk":
 		fmt.Println(indTokens[1:])
 		return comandos.ParserRMDISK(indTokens[1:])
-		return "", nil
 	case "fdisk":
 		fmt.Println(indTokens[1:])
 		return comandos.ParserFDISK(indTokens[1:])
-		return "", nil
+	case "mount":
+		fmt.Println(indTokens[1:])
+		return comandos.ParserMOUNT(indTokens[1:])
+	case "rep:":
+		fmt.Println(indTokens[1:])
+		return comandos.ParserREP(indTokens[1:])
 	default:
 		return nil, fmt.Errorf("command not found: %s", indTokens[0])
 	}
