@@ -39,22 +39,20 @@ func GetParticionMontadaUID(id string) (*structures.PARTITION, string, error) {
 
 }
 
-func GetMPartitionReport(id string) (*structures.MBR, *structures.SUBERBLOCK, string, error) {
+func GetMBRPartitionReport(id string) (*structures.MBR, error) {
 	path := ParticionMontada[id]
 	if path == "" {
-		return nil, nil, "", fmt.Errorf("particion %s no montada", id)
+		return nil, fmt.Errorf("particion %s no montada", id)
 	}
 	var mbr structures.MBR
 	err := mbr.Deserialize(path)
 	if err != nil {
-		return nil, nil, "", err
+		return nil, err
 	}
 	partition, err := mbr.GetPID(id)
 	if partition == nil {
-		return nil, nil, "", err
+		return nil, err
 	}
 
-	var sb structures.SUBERBLOCK
-
-	return &mbr, &sb, path, nil
+	return &mbr, nil
 }

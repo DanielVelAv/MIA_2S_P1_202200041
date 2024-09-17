@@ -145,6 +145,13 @@ func crearParticionPrimaria(fdisk *FDISK, tamanio int) error {
 		return err
 	}
 
+	// Verificar si hay suficiente espacio disponible
+	espacioOcupado := com.EspacioOcupado()
+	espacioDisponible := com.Mbr_size - espacioOcupado
+	if int32(tamanio) > espacioDisponible {
+		return errors.New("No hay suficiente espacio disponible en el disco para crear la partición primaria")
+	}
+
 	//busca la primera particion disponible
 	particionDisponible, inicioParticion, indiceParticion := com.GetFirstA()
 
@@ -180,6 +187,13 @@ func crearParticionExtendida(fdisk *FDISK, tamanio int) error {
 		if part.Part_type[0] == 'E' {
 			return errors.New("Ya existe una particion extendida")
 		}
+	}
+
+	// Verificar si hay suficiente espacio disponible
+	espacioOcupado := com.EspacioOcupado()
+	espacioDisponible := com.Mbr_size - espacioOcupado
+	if int32(tamanio) > espacioDisponible {
+		return errors.New("No hay suficiente espacio disponible en el disco para crear la partición Extendida")
 	}
 
 	//busca la primera particion disponible
@@ -380,25 +394,25 @@ func EspacioDisponibleExtendida(fdisk *FDISK, extendida *structures.PARTITION, t
 	//fmt.Println("Todo bien deserializando", ebr)
 	//inicialmente tiene todo
 	espacioDisponible := int(extendida.Part_size)
-	//fmt.Println("espacio disponible antes de verificar ebrs: ", espacioDisponible)
+	fmt.Println("espacio disponible antes de verificar ebrs: ", espacioDisponible)
 
-	//restar lo ocupado por el primer ebr
-	espacioDisponible -= int(ebr.Ebr_part_size)
 	//fmt.Println("espacio disponible despues de verificar el primer ebr: ", espacioDisponible)
 
-	for ebr.Ebr_part_next != 0 {
+	for {
+		espacioDisponible -= int(ebr.Ebr_part_size)
+		if ebr.Ebr_part_next == 0 {
+			break
+		}
+
 		siguienteEBR := &structures.EBR{}
 		err := siguienteEBR.DeserializeEBR(fdisk.path, int(ebr.Ebr_part_next))
 		if err != nil {
 			return 0, err
 		}
-		espacioDisponible -= int(siguienteEBR.Ebr_part_size)
 		ebr = siguienteEBR
 	}
+	fmt.Println("espacio luego de verficar las particiones logicas ", espacioDisponible)
 
-	// Restar el espacio ocupado por el último EBR nulo
-	espacioDisponible -= int(ebr.Ebr_part_size)
-	//fmt.Println("espacio disponible despues de verificar todos los ebrs: ", espacioDisponible)
 	return espacioDisponible, nil
 
 }

@@ -28,7 +28,7 @@ func Analyzer(input string) (interface{}, error) {
 	case "mount":
 		fmt.Println(indTokens[1:])
 		return comandos.ParserMOUNT(indTokens[1:])
-	case "rep:":
+	case "rep":
 		fmt.Println(indTokens[1:])
 		return comandos.ParserREP(indTokens[1:])
 	default:

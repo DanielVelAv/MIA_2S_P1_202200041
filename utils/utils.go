@@ -3,6 +3,9 @@ package utils
 import (
 	"errors"
 	"fmt"
+	"os"
+	"path/filepath"
+	"strings"
 )
 
 func ConvertirTamanioBy(size int, unit string) (int, error) {
@@ -41,4 +44,21 @@ func GetLetter(path string) (string, error) {
 
 	}
 	return pathToLetter[path], nil
+}
+
+func CrearDirectorios(path string) error {
+	directorio := filepath.Dir(path)
+	err := os.MkdirAll(directorio, os.ModePerm)
+	if err != nil {
+		return fmt.Errorf("error creating director: %v", err)
+	}
+	return nil
+}
+
+func ObtenerNombreArchivo(path string) (string, string) {
+	directorio := filepath.Dir(path)
+	Nbase := strings.TrimSuffix(filepath.Base(path), filepath.Ext(path))
+	nombreDot := filepath.Join(directorio, Nbase+".dot")
+	ImagenResultante := path
+	return nombreDot, ImagenResultante
 }

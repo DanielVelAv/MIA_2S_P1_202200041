@@ -17,21 +17,14 @@ type REPORT struct {
 }
 
 func ParserREP(tokens []string) (string, error) {
+	fmt.Println("Ingresa a parse report")
 	com := &REPORT{} //instancia de report
-
 	args := strings.Join(tokens, " ")
-
+	fmt.Println("ER")
 	re := regexp.MustCompile(`-name=[^\s]+|-path="[^"]+"|-path=[^\s]+|-id=[^\s]+|-path_file_is="[^"]+"|-path_file_is=[^\s]+`)
 	coincidencias := re.FindAllString(args, -1)
 
-	if len(coincidencias) != len(tokens) {
-		for _, token := range tokens {
-			if !re.MatchString(token) {
-				return "", fmt.Errorf("formato de parametro inválido: %s", token)
-			}
-		}
-	}
-
+	fmt.Println("coincidencias")
 	for _, match := range coincidencias {
 		clave := strings.SplitN(match, "=", 2)
 		if len(clave) != 2 {
@@ -51,8 +44,9 @@ func ParserREP(tokens []string) (string, error) {
 			}
 			com.id = value
 		case "-name":
-			if value != "mbr" || value != "disk" || value != "inode" || value != "block" || value != "bm_inode" || value != "bm_block" || value != "sb" || value != "file" || value != "Ls" {
-				return "", errors.New("el nombre no es valido, debe ser mbr, disk, inode, block, bm_inode, bm_block, sb, file o Ls")
+			nombresValidos := []string{"mbr", "disk", "inode", "bm_inode", "bm_block", "sb", "file", "Ls"}
+			if !loContiene(nombresValidos, value) {
+				return "", errors.New("el nombre es invalido")
 			}
 			com.name = value
 		case "-path":
@@ -82,18 +76,42 @@ func ParserREP(tokens []string) (string, error) {
 }
 
 func comandReportes(rep *REPORT) error {
-	MBRmontado, sbMontado, pathDMontado, err := global.GetMPartitionReport(rep.id)
+	fmt.Println("Ingreso a comandos reportes")
+	MBRmontado, err := global.GetMBRPartitionReport(rep.id)
+	pathDes := global.ParticionMontada[rep.id]
+	//hacer lo de arriba con sbMontado, pathDMontado
+	fmt.Println("luego de sacar MBR", "err es: ", err)
 	if err != nil {
 		return err
 	}
+	fmt.Println("va a ingresar a switch")
 	switch rep.name {
 	case "mbr":
-		err := reportes.ReporteMBR(MBRmontado, rep.path)
+		err := reportes.ReporteMBR(MBRmontado, rep.path, pathDes)
 		if err != nil {
 			fmt.Printf("Error al generar el reporte MBR: %v\n", err)
 			return err
 		}
+
 	case "disk":
+		err := reportes.ReporteDisk(MBRmontado, rep.path, pathDes)
+		if err != nil {
+			fmt.Printf("Error al generar el reporte Disk: %v\n", err)
+			return err
+		}
+	case "inode":
+		fmt.Println("")
+	case "bm_inode":
+		fmt.Println("")
 	}
 	return nil
+}
+
+func loContiene(list []string, values string) bool {
+	for _, valor := range list {
+		if valor == values {
+			return true
+		}
+	}
+	return false
 }

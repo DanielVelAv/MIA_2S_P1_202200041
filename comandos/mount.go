@@ -122,6 +122,17 @@ func MountPartition(mount *MOUNT) error {
 		fmt.Println("ID: ", id)
 	}
 
+	fmt.Println("Todas las particiones:")
+	for i, partition := range mbr.Mbr_partitions {
+		fmt.Printf("Partición %d:\n", i+1)
+		fmt.Printf("  Nombre: %s\n", partition.Part_name)
+		fmt.Printf("  Estado: %s\n", partition.Part_status)
+		fmt.Printf("  Tipo: %s\n", partition.Part_type)
+		fmt.Printf("  Tamaño: %d\n", partition.Part_size)
+		fmt.Printf("  ID de montaje: %d\n", partition.Part_id)
+		fmt.Println()
+	}
+
 	return nil
 
 }

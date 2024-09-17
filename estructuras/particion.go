@@ -2,7 +2,6 @@ package estructuras
 
 import (
 	"fmt"
-	"strconv"
 )
 
 type PARTITION struct {
@@ -13,7 +12,7 @@ type PARTITION struct {
 	Part_size        int32
 	Part_name        [16]byte
 	Part_correlative int32
-	Part_id          int32
+	Part_id          [4]byte
 }
 
 func (p *PARTITION) CrearParticion(Pstart, pSize int, pType, pFit, pName string) {
@@ -79,11 +78,10 @@ func (particion *PARTITION) MontarParticion(correlativo int, id string) error {
 	particion.Part_correlative = int32(correlativo) + 1
 
 	//se asigna el id a la particion
-	idInt, err := strconv.Atoi(id)
-	if err != nil {
-		return fmt.Errorf("error convirtiendo: %v", err)
-	}
-	particion.Part_id = int32(idInt)
+	copy(particion.Part_id[:], id)
+
+	//se cambia el estado de la particion
+	particion.Part_status[0] = '1'
 
 	return nil
 }

@@ -71,7 +71,7 @@ func (mbr *MBR) GetFirstA() (*PARTITION, int, int) {
 	//recorre las particiones
 	for i := 0; i < len(mbr.Mbr_partitions); i++ {
 		//si la particion esta vacia y el start es -1
-		if mbr.Mbr_partitions[i].Part_start == -1 {
+		if mbr.Mbr_partitions[i].Part_type[0] == byte('N') && mbr.Mbr_partitions[i].Part_start == -1 {
 			return &mbr.Mbr_partitions[i], offset, i
 		} else {
 			offset += int(mbr.Mbr_partitions[i].Part_size)
@@ -121,11 +121,21 @@ func (mbr *MBR) GetPName(name string) (*PARTITION, int) {
 func (mbr *MBR) GetPID(id string) (*PARTITION, error) {
 	// se recorren las particiones
 	for i := 0; i < len(mbr.Mbr_partitions); i++ {
-		pID := strings.Trim(string(mbr.Mbr_partitions[i].Part_id), "\x00")
+		pID := strings.Trim(string(mbr.Mbr_partitions[i].Part_id[:]), "\x00")
 		inputId := strings.Trim(id, "\x00")
 		if strings.EqualFold(pID, inputId) { //si son iguales
 			return &mbr.Mbr_partitions[i], nil
 		}
 	}
-	return nil, errors.New("No se encontró partición con el ID: %s")
+	return nil, errors.New("No se encontró partición con el ID:" + id)
+}
+
+func (mbr *MBR) EspacioOcupado() int32 {
+	var espacioOcupado int32 = 0
+	for _, part := range mbr.Mbr_partitions {
+		if part.Part_status[0] != 0 && part.Part_start != -1 {
+			espacioOcupado += part.Part_size
+		}
+	}
+	return espacioOcupado
 }
