@@ -47,6 +47,16 @@ body{
   font-size: 1em;
 }
 
+#btnEjecutarCom{
+    background-color: rgb(65, 65, 211);
+    border-radius: 5px;
+    margin-left: 10px;
+    height: 2em;
+    width:10em;
+    color:white;
+    font-size: 1em;
+}
+
 #arch{
   margin-right: 1em;
 }
